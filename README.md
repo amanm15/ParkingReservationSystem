@@ -35,7 +35,7 @@ cd ..
 bash# Start all services
 docker-compose up --build
 
-# Or run in background
+# If running background
 docker-compose up -d --build
 The application will be available at:
 
@@ -53,7 +53,7 @@ npm start
 bash# Windows PowerShell
 .\scripts\simple-ci.ps1
 
-# Or if using bash
+# If using bash
 ./scripts/simple-ci.sh
 API Endpoints
 
