@@ -59,11 +59,20 @@ try {
     
     # Test CRUD operations
     $timestamp = Get-Date -Format "yyyyMMddHHmmss"
-    $testReservation = "{`"name`":`"CI Test $timestamp`",`"licensePlate`":`"TEST$timestamp`",`"spotNumber`":99,`"date`":`"2024-12-31`"}"
+    
+    # Generate random license plate (2-8 characters)
+    $chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    $createLength = Get-Random -Minimum 2 -Maximum 9  # 2-8 characters
+    $createLicense = ""
+    for ($i = 0; $i -lt $createLength; $i++) {
+        $createLicense += $chars[(Get-Random -Maximum $chars.Length)]
+    }
+    
+    $testReservation = "{`"name`":`"CI Test $timestamp`",`"licensePlate`":`"$createLicense`",`"spotNumber`":99,`"date`":`"2024-12-31`"}"
     
     # Test CREATE
     $createResult = Invoke-RestMethod "http://localhost:5000/api/reservations" -Method POST -Body $testReservation -ContentType "application/json"
-    Write-Host "   PASSED: CREATE operation working" -ForegroundColor Green
+    Write-Host "   PASSED: CREATE operation working (License: $createLicense)" -ForegroundColor Green
     
     # Test READ
     $allReservations = Invoke-RestMethod "http://localhost:5000/api/reservations"
@@ -74,8 +83,15 @@ try {
         $createdReservation = $allReservations | Where-Object { $_.name -eq "CI Test $timestamp" }
         $reservationId = $createdReservation.id
         
+        # Generate another random license plate for UPDATE test
+        $updateLength = Get-Random -Minimum 2 -Maximum 9  # 2-8 characters
+        $updateLicense = ""
+        for ($i = 0; $i -lt $updateLength; $i++) {
+            $updateLicense += $chars[(Get-Random -Maximum $chars.Length)]
+        }
+        
         # Test UPDATE
-        $updateData = "{`"name`":`"Updated Test $timestamp`",`"licensePlate`":`"UPD$timestamp`",`"spotNumber`":98,`"date`":`"2024-12-30`"}"
+        $updateData = "{`"name`":`"Updated Test $timestamp`",`"licensePlate`":`"$updateLicense`",`"spotNumber`":98,`"date`":`"2024-12-30`"}"
         Invoke-RestMethod "http://localhost:5000/api/reservations/$reservationId" -Method PUT -Body $updateData -ContentType "application/json"
         Write-Host "   PASSED: UPDATE operation working" -ForegroundColor Green
         
@@ -115,5 +131,8 @@ Write-Host ""
 Write-Host "APPLICATION READY:"
 Write-Host "Frontend: http://localhost:3000"
 Write-Host "Backend:  http://localhost:5000/api/reservations"
+Write-Host ""
+Write-Host "Opening application in browser..."
+Start-Process "http://localhost:3000"
 Write-Host ""
 Write-Host "To stop: docker-compose down"

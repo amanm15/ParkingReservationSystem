@@ -105,7 +105,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>🚗 Parking Reservation System</h1>
+        <h1>🚗 Aman's Parking Garage</h1>
         <p>Reserve your parking spot easily</p>
       </header>
 

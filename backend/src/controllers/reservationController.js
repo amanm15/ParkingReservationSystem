@@ -39,6 +39,13 @@ export const createReservation = async (req, res) => {
       })
     }
 
+    // License plate length validation
+    if (licensePlate.length < 2 || licensePlate.length > 8) {
+      return res.status(400).json({
+        error: 'License plate must be between 2 and 8 characters'
+      })
+    }
+
     // Basic format validation
     if (typeof spotNumber !== 'number' || spotNumber <= 0) {
       return res.status(400).json({
@@ -60,6 +67,7 @@ export const createReservation = async (req, res) => {
       })
     }
 
+    // Check if license plate already has a reservation for that date
     const existingLicenseReservation = await db.get(
       'SELECT * FROM reservations WHERE licensePlate = ? AND date = ?',
       [licensePlate, date]
@@ -91,12 +99,43 @@ export const updateReservation = async (req, res) => {
     const { id } = req.params
     const { name, licensePlate, spotNumber, date } = req.body
 
+    // License plate length validation
+    if (licensePlate && (licensePlate.length < 2 || licensePlate.length > 8)) {
+      return res.status(400).json({
+        error: 'License plate must be between 2 and 8 characters'
+      })
+    }
+
     const db = await initDb()
 
     // Check if reservation exists
     const existing = await db.get('SELECT * FROM reservations WHERE id = ?', [id])
     if (!existing) {
       return res.status(404).json({ error: 'Reservation not found' })
+    }
+
+    // Check if different spot is already reserved for that date
+    const existingSpotReservation = await db.get(
+      'SELECT * FROM reservations WHERE spotNumber = ? AND date = ? AND id != ?',
+      [spotNumber, date, id]
+    )
+
+    if (existingSpotReservation) {
+      return res.status(409).json({
+        error: 'Parking spot is already reserved for this date'
+      })
+    }
+
+    // Check if different license plate already has a reservation for that date
+    const existingLicenseReservation = await db.get(
+      'SELECT * FROM reservations WHERE licensePlate = ? AND date = ? AND id != ?',
+      [licensePlate, date, id]
+    )
+
+    if (existingLicenseReservation) {
+      return res.status(409).json({
+        error: 'This license plate already has a reservation for this date'
+      })
     }
 
     const result = await db.run(
