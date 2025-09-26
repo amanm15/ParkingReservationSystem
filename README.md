@@ -1,4 +1,5 @@
-Parking Reservation System
+# Parking Reservation System
+
 A full-stack web application for managing parking reservations built with React, Node.js, Express, and SQLite.
 Overview
 This application provides a complete parking reservation management system with the following features:
@@ -35,7 +36,7 @@ cd ..
 bash# Start all services
 docker-compose up --build
 
-# If running background
+If running in background
 docker-compose up -d --build
 The application will be available at:
 
@@ -53,7 +54,7 @@ npm start
 bash# Windows PowerShell
 .\scripts\simple-ci.ps1
 
-# If using bash
+If using bash
 ./scripts/simple-ci.sh
 API Endpoints
 
@@ -110,8 +111,8 @@ Stopping the Application
 bash# Stop Docker containers
 docker-compose down
 
-# Stop manual processes
-# Ctrl+C in each terminal running the services
+Stop manual processes
+Ctrl+C in each terminal running the services
 Development Notes
 
 The frontend proxy is configured to route API calls to the backend
