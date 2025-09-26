@@ -1,0 +1,163 @@
+name: Parking Reservation CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    name: Backend Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Lint backend code
+      run: |
+        cd backend
+        npm run lint
+    
+    - name: Run backend health check
+      run: |
+        cd backend
+        npm start &
+        sleep 10
+        curl -f http://localhost:5000/api/reservations || exit 1
+        pkill -f "node server.js"
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    name: Frontend Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Test frontend build
+      run: |
+        cd frontend
+        test -d build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    name: Docker Build Test
+    needs: [test-backend, test-frontend]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build backend Docker image
+      run: |
+        cd backend
+        docker build -t parking-backend:test .
+    
+    - name: Build frontend Docker image
+      run: |
+        cd frontend
+        docker build -t parking-frontend:test .
+    
+    - name: Test Docker Compose
+      run: |
+        docker-compose -f docker-compose.yml config
+
+  integration-test:
+    runs-on: ubuntu-latest
+    name: Integration Tests
+    needs: [test-backend, test-frontend]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Start services with Docker Compose
+      run: |
+        docker-compose up -d --build
+        sleep 30
+    
+    - name: Wait for services to be ready
+      run: |
+        timeout 60 sh -c 'until curl -f http://localhost:5000/api/reservations; do sleep 2; done'
+        timeout 60 sh -c 'until curl -f http://localhost:3000; do sleep 2; done'
+    
+    - name: Run API tests
+      run: |
+        # Test Create
+        curl -X POST http://localhost:5000/api/reservations \
+          -H "Content-Type: application/json" \
+          -d '{"name":"Test User","licensePlate":"TEST123","spotNumber":1,"date":"2024-12-01"}'
+        
+        # Test Read
+        curl -f http://localhost:5000/api/reservations
+    
+    - name: Stop services
+      run: docker-compose down
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    needs: [docker-build, integration-test]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        echo "Backend image: parking-backend:${{ github.sha }}"
+        echo "Frontend image: parking-frontend:${{ github.sha }}"
+        echo "Staging deployment complete!"
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    needs: [docker-build, integration-test]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        echo "Backend image: parking-backend:${{ github.sha }}"
+        echo "Frontend image: parking-frontend:${{ github.sha }}"
+        echo "Production deployment complete!"

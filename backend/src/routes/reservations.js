@@ -1,27 +1,27 @@
-import express from "express";
-import { 
+import express from 'express'
+import {
   getAllReservations,
   createReservation,
   getReservationById,
   updateReservation,
-  deleteReservation 
-} from "../controllers/reservationController.js";
+  deleteReservation
+} from '../controllers/reservationController.js'
 
-const router = express.Router();
+const router = express.Router()
 
 // GET /api/reservations - Get all reservations
-router.get("/", getAllReservations);
+router.get('/', getAllReservations)
 
 // // GET /api/reservations/:id - Get reservation by ID
-router.get("/:id", getReservationById);
+router.get('/:id', getReservationById)
 
 // POST /api/reservations - Create new reservation
-router.post("/", createReservation);
+router.post('/', createReservation)
 
 // PUT /api/reservations/:id - Update reservation
-router.put("/:id", updateReservation);
+router.put('/:id', updateReservation)
 
 // // DELETE /api/reservations/:id - Delete reservation
-router.delete("/:id", deleteReservation);
+router.delete('/:id', deleteReservation)
 
-export default router;
+export default router
